@@ -1,135 +1,123 @@
 // src/api/product.js
-const PRODUCT_URL = 'http://localhost:5003/api/products';
+import axios from 'axios';
 
-/**
- * Fetch all products
- * @returns Array of product objects
- */
-export const fetchProducts = async (token) => {
-  const res = await fetch(`${PRODUCT_URL}`, {
-    headers: { 'Authorization': `Bearer ${token}` }
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-};
+const API_URL = process.env.REACT_APP_PRODUCT_SERVICE_URL || 'http://localhost:5002/api';
 
-/**
- * Fetch products by company ID
- * @param companyId The ID of the company
- * @returns Array of product objects
- */
-export const fetchCompanyProducts = async (companyId, token) => {
-  const res = await fetch(`${PRODUCT_URL}/company/${companyId}`, {
-    headers: { 'Authorization': `Bearer ${token}` }
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-};
-
-/**
- * Fetch products by category
- * @param categoryId The ID of the category
- * @returns Array of product objects
- */
-export const fetchProductsByCategory = async (categoryId, token) => {
-  const res = await fetch(`${PRODUCT_URL}?categoryId=${categoryId}`, {
-    headers: { 'Authorization': `Bearer ${token}` }
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-};
-
-/**
- * Fetch a single product by ID
- * @param productId
- * @returns { data: { …product fields… } }
- */
-export const fetchProductById = async (productId, token) => {
-  const res = await fetch(`${PRODUCT_URL}/${productId}`, {
-    headers: { 'Authorization': `Bearer ${token}` }
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-};
-
-/**
- * Create a new product
- * @param productData Object containing product details
- * @returns { data: { …product fields… } }
- */
-export const createProduct = async (productData, token) => {
-  const res = await fetch(`${PRODUCT_URL}`, {
-    method: 'POST',
+const getAuthHeader = () => {
+  const token = localStorage.getItem('token');
+  console.log('Token being sent:', token); // Debug log
+  return {
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({
-      name: productData.name,
-      description: productData.description,
-      price: productData.price,
-      category: productData.categoryId,
-      sku: productData.sku,
-      stock: productData.stock,
-      unit: productData.unit,
-      minStockLevel: productData.minStockLevel,
-      status: productData.status || 'active'
-    })
-  });
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.message || `HTTP ${res.status}`);
-  }
-  return res.json();
-};
-
-/**
- * Update an existing product
- * @param productId ID of the product to update
- * @param productData Object containing updated product details
- * @returns { data: { …product fields… } }
- */
-export const updateProduct = async (productId, productData, token) => {
-  const res = await fetch(`${PRODUCT_URL}/${productId}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({
-      name: productData.name,
-      description: productData.description,
-      price: productData.price,
-      category: productData.categoryId,
-      sku: productData.sku,
-      stock: productData.stock,
-      unit: productData.unit,
-      minStockLevel: productData.minStockLevel,
-      status: productData.status
-    })
-  });
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.message || `HTTP ${res.status}`);
-  }
-  return res.json();
-};
-
-/**
- * Delete a product
- * @param productId ID of the product to delete
- * @returns { success: true }
- */
-export const deleteProduct = async (productId, token) => {
-  const res = await fetch(`${PRODUCT_URL}/${productId}`, {
-    method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${token}`
+      Authorization: `Bearer ${token}`
     }
-  });
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.message || `HTTP ${res.status}`);
+  };
+};
+
+export const createProduct = async (productData) => {
+  try {
+    console.log('Raw product data received:', productData); // Debug log
+    console.log('CompanyId in product data:', productData.companyId); // Debug log
+
+    // Ensure companyId is included in the request
+    if (!productData.companyId) {
+      console.error('CompanyId is missing from product data'); // Debug log
+      throw new Error('Company ID is required');
+    }
+
+    // Create a new object with all required fields
+    const requestData = {
+      ...productData,
+      companyId: productData.companyId.toString() // Ensure companyId is a string
+    };
+
+    console.log('Creating product with data:', requestData); // Debug log
+    const response = await axios.post(`${API_URL}/products`, requestData, getAuthHeader());
+    return response.data;
+  } catch (error) {
+    console.error('Full error object:', error); // Log the full error object
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error('Error response data:', error.response.data);
+      console.error('Error response status:', error.response.status);
+      console.error('Error response headers:', error.response.headers);
+      throw new Error(error.response.data?.message || 'Failed to create product');
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('Error request:', error.request);
+      throw new Error('No response received from server');
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error('Error message:', error.message);
+      throw new Error(error.message || 'Failed to create product');
+    }
   }
-  return res.json();
+};
+
+export const getProductsByCompany = async (companyId) => {
+  try {
+    const response = await axios.get(`${API_URL}/products/company/${companyId}`, getAuthHeader());
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    if (error.response) {
+      throw new Error(error.response.data?.message || 'Failed to fetch products');
+    } else if (error.request) {
+      throw new Error('No response received from server');
+    } else {
+      throw new Error(error.message || 'Failed to fetch products');
+    }
+  }
+};
+
+export const updateProduct = async (productId, productData) => {
+  try {
+    const response = await axios.put(`${API_URL}/products/${productId}`, productData, getAuthHeader());
+    return response.data;
+  } catch (error) {
+    console.error('Error updating product:', error);
+    if (error.response) {
+      throw new Error(error.response.data?.message || 'Failed to update product');
+    } else if (error.request) {
+      throw new Error('No response received from server');
+    } else {
+      throw new Error(error.message || 'Failed to update product');
+    }
+  }
+};
+
+export const deleteProduct = async (productId) => {
+  try {
+    const response = await axios.delete(`${API_URL}/products/${productId}`, getAuthHeader());
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    if (error.response) {
+      throw new Error(error.response.data?.message || 'Failed to delete product');
+    } else if (error.request) {
+      throw new Error('No response received from server');
+    } else {
+      throw new Error(error.message || 'Failed to delete product');
+    }
+  }
+};
+
+export const updateProductStatus = async (productId, status) => {
+  try {
+    const response = await axios.patch(
+      `${API_URL}/products/${productId}/status`,
+      { status },
+      getAuthHeader()
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error updating product status:', error);
+    if (error.response) {
+      throw new Error(error.response.data?.message || 'Failed to update product status');
+    } else if (error.request) {
+      throw new Error('No response received from server');
+    } else {
+      throw new Error(error.message || 'Failed to update product status');
+    }
+  }
 };

@@ -1,22 +1,47 @@
 // src/pages/StockOverview.jsx
 import React, { useState, useEffect } from 'react';
-import { fetchAllStock } from '../../api/stock';
-import { fetchProducts } from '../../api/product';
+import { fetchStock } from '../../api/stock';
+import { getProductsByCompany } from '../../api/product';
+import { fetchCompanies } from '../../api/company';
 import useAuth from '../../hooks/useAuth';
-import { FiPackage, FiAlertTriangle, FiDollarSign } from 'react-icons/fi';
 
-const StockOverview = () => {
-  const { token } = useAuth();
+// Sample product images (you should replace these with actual product images)
+const productImages = {
+  'tshirt': 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+  'jeans': 'https://images.unsplash.com/photo-1542272604-787c3835535d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+  'shirt': 'https://images.unsplash.com/photo-1598033129183-c4f50c736f10?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+  'jacket': 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+  'default': 'https://images.unsplash.com/photo-1560343090-f0409e92791a?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60'
+};
+
+export const StockOverview = () => {
   const [stock, setStock] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const { token, user } = useAuth();
 
   useEffect(() => {
-    const loadStock = async () => {
+    const getStock = async () => {
       try {
-        setLoading(true);
-        const data = await fetchAllStock(token);
-        setStock(data);
+        const data = await fetchStock(token);
+        setStock(data.data || []);
+      } catch (error) {
+        console.error('Error fetching stock:', error);
+        setError('Failed to fetch stock data');
+      }
+    };
+
+    const fetchProducts = async () => {
+      try {
+        const companies = await fetchCompanies();
+        const userCompany = companies.find(c => c.contactEmail === user.email);
+        if (userCompany) {
+          const productsData = await getProductsByCompany(userCompany._id);
+          setProducts(productsData);
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -24,158 +49,189 @@ const StockOverview = () => {
       }
     };
 
-    loadStock();
-  }, [token]);
+    getStock();
+    fetchProducts();
+  }, [token, user.email]);
 
-  // Calculate stock statistics
-  const totalItems = stock.length;
-  const lowStockItems = stock.filter(item => item.quantity <= item.minStockLevel).length;
-  const outOfStockItems = stock.filter(item => item.quantity === 0).length;
-  const totalValue = stock.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+  const handleProductChange = (e) => {
+    setSelectedProduct(e.target.value);
+  };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
+  const handleStockUpdate = async (productId, change) => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
-          <div className="flex items-center">
-            <FiAlertTriangle className="h-5 w-5 mr-2" />
-            <p>{error}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    try {
+      // Here you would typically call an API to update the stock
+      // For now, we'll just update the local state
+      setStock(prevStock => 
+        prevStock.map(item => 
+          item.productId === productId 
+            ? { ...item, quantity: Math.max(0, item.quantity + change) }
+            : item
+        )
+      );
+      setSuccess(`Stock updated successfully`);
+    } catch (error) {
+      console.error('Error updating stock:', error);
+      setError('Failed to update stock');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getProductImage = (productName) => {
+    if (!productName) return productImages.default;
+    
+    const lowerName = productName.toLowerCase();
+    for (const [key, url] of Object.entries(productImages)) {
+      if (lowerName.includes(key)) {
+        return url;
+      }
+    }
+    return productImages.default;
+  };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Stock Overview</h1>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
+      <h2 style={{ marginBottom: '20px', color: '#333' }}>Stock Overview</h2>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-blue-100 text-blue-600">
-              <FiPackage className="h-6 w-6" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Items</p>
-              <p className="text-2xl font-semibold text-gray-900">{totalItems}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
-              <FiAlertTriangle className="h-6 w-6" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Low Stock Items</p>
-              <p className="text-2xl font-semibold text-gray-900">{lowStockItems}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-red-100 text-red-600">
-              <FiAlertTriangle className="h-6 w-6" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Out of Stock</p>
-              <p className="text-2xl font-semibold text-gray-900">{outOfStockItems}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-green-100 text-green-600">
-              <FiDollarSign className="h-6 w-6" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Value</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                ${totalValue.toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Low Stock Alerts */}
-      {lowStockItems > 0 && (
-        <div className="bg-white rounded-lg shadow mb-8">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">Low Stock Alerts</h2>
-          </div>
-          <div className="p-6">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Product
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Current Stock
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Minimum Level
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {stock
-                    .filter(item => item.quantity <= item.minStockLevel)
-                    .map(item => (
-                      <tr key={item.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {item.productName}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            SKU: {item.sku}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {item.quantity} {item.unit}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {item.minStockLevel} {item.unit}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            item.quantity === 0
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {item.quantity === 0 ? 'Out of Stock' : 'Low Stock'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+      {error && (
+        <div style={{ 
+          padding: '10px', 
+          marginBottom: '20px', 
+          backgroundColor: '#ffebee', 
+          color: '#c62828',
+          borderRadius: '4px'
+        }}>
+          {error}
         </div>
       )}
+
+      {success && (
+        <div style={{ 
+          padding: '10px', 
+          marginBottom: '20px', 
+          backgroundColor: '#e8f5e9', 
+          color: '#2e7d32',
+          borderRadius: '4px'
+        }}>
+          {success}
+        </div>
+      )}
+
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{ 
+          display: 'block', 
+          marginBottom: '10px',
+          color: '#666'
+        }}>
+          Filter by Product:
+          <select 
+            value={selectedProduct} 
+            onChange={handleProductChange}
+            style={{
+              width: '100%',
+              padding: '8px',
+              borderRadius: '4px',
+              border: '1px solid #ddd',
+              marginTop: '5px'
+            }}
+          >
+            <option value="">All Products</option>
+            {products.map((prod) => (
+              <option key={prod._id || prod.id} value={prod._id || prod.id}>
+                {prod.name || 'Unnamed Product'}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+        gap: '20px'
+      }}>
+        {stock
+          .filter((item) => !selectedProduct || item.productId === selectedProduct)
+          .map((item) => {
+            const product = products.find(p => (p._id || p.id) === item.productId) || {};
+            return (
+              <div key={item._id || item.id} style={{
+                backgroundColor: '#fff',
+                borderRadius: '8px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  height: '200px',
+                  backgroundImage: `url(${getProductImage(product.name)})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }} />
+                
+                <div style={{ padding: '15px' }}>
+                  <h3 style={{ margin: '0 0 10px 0', color: '#333' }}>
+                    {product.name || 'Unknown Product'}
+                  </h3>
+                  
+                  <p style={{ 
+                    margin: '0 0 15px 0',
+                    color: '#666',
+                    fontSize: '0.9rem'
+                  }}>
+                    Current Stock: {item.quantity || 0}
+                  </p>
+
+                  {user?.role === 'warehouse-manager' && (
+                    <div style={{ 
+                      display: 'flex',
+                      gap: '10px',
+                      marginTop: '10px'
+                    }}>
+                      <button
+                        onClick={() => handleStockUpdate(item.productId, -1)}
+                        disabled={loading || (item.quantity || 0) <= 0}
+                        style={{
+                          flex: 1,
+                          padding: '8px',
+                          backgroundColor: '#dc3545',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: (item.quantity || 0) <= 0 ? 'not-allowed' : 'pointer',
+                          opacity: (item.quantity || 0) <= 0 ? 0.5 : 1
+                        }}
+                      >
+                        Decrease
+                      </button>
+                      <button
+                        onClick={() => handleStockUpdate(item.productId, 1)}
+                        disabled={loading}
+                        style={{
+                          flex: 1,
+                          padding: '8px',
+                          backgroundColor: '#28a745',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Increase
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+      </div>
     </div>
   );
 };

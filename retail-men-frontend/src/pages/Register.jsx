@@ -20,7 +20,8 @@ const Register = () => {
     try {
       await authApi.registerUser({ 
         email, 
-        password, 
+        password,
+        confirmPassword,
         username,
         role 
       });

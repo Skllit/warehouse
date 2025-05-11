@@ -3,27 +3,19 @@ const AUTH_URL = 'http://localhost:5000/api/auth';
 
 /**
  * Register a new user
- * @param {Object} userData - User data including email and name
- * @param {string} token - Authentication token
+ * @param {Object} userData - User data including email, password, confirmPassword, username and role
  * @returns {Promise<Object>} Created user data
  */
-const registerUser = async (userData, token) => {
+const registerUser = async (userData) => {
   try {
     console.log('Registering user with data:', userData);
     
     const response = await fetch(`${AUTH_URL}/register`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        username: userData.username,
-        email: userData.email,
-        password: userData.password,
-        confirmPassword: userData.password, // Add confirmPassword field
-        role: userData.role
-      })
+      body: JSON.stringify(userData)
     });
 
     // If response is not JSON, handle it appropriately
@@ -42,7 +34,7 @@ const registerUser = async (userData, token) => {
     return data;
   } catch (error) {
     console.error('Error registering user:', error);
-    throw new Error(error.message || 'Failed to register user');
+    throw error;
   }
 };
 
@@ -70,24 +62,19 @@ const loginUser = async (credentials) => {
 };
 
 /**
- * Get all users
+ * Get all users (admin only)
  * @param {string} token - Authentication token
  * @returns {Promise<Array>} List of users
  */
 const getUsers = async (token) => {
   try {
     const response = await fetch(`${AUTH_URL}/users`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      headers: { 'Authorization': `Bearer ${token}` }
     });
-
     const data = await response.json();
-    
     if (!response.ok) {
       throw new Error(data.message || 'Failed to fetch users');
     }
-
     return data;
   } catch (error) {
     console.error('Error fetching users:', error);
@@ -96,7 +83,29 @@ const getUsers = async (token) => {
 };
 
 /**
- * Get available roles
+ * Get user details (admin only)
+ * @param {string} userId - User ID
+ * @param {string} token - Authentication token
+ * @returns {Promise<Object>} User details
+ */
+const getUserDetails = async (userId, token) => {
+  try {
+    const response = await fetch(`${AUTH_URL}/users/${userId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch user details');
+    }
+    return data;
+  } catch (error) {
+    console.error('Error fetching user details:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get available roles (admin only)
  * @param {string} token - Authentication token
  * @returns {Promise<Array>} List of roles
  */
@@ -117,7 +126,7 @@ const fetchRoles = async (token) => {
 };
 
 /**
- * Update user role
+ * Update user role (admin only)
  * @param {string} userId - User ID
  * @param {string} role - New role
  * @param {string} token - Authentication token
@@ -145,7 +154,7 @@ const updateUserRole = async (userId, role, token) => {
 };
 
 /**
- * Delete a user
+ * Delete user (admin only)
  * @param {string} userId - User ID
  * @param {string} token - Authentication token
  * @returns {Promise<Object>} Deletion response
@@ -154,9 +163,7 @@ const deleteUser = async (userId, token) => {
   try {
     const response = await fetch(`${AUTH_URL}/users/${userId}`, {
       method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      headers: { 'Authorization': `Bearer ${token}` }
     });
     const data = await response.json();
     if (!response.ok) {
@@ -169,36 +176,66 @@ const deleteUser = async (userId, token) => {
   }
 };
 
+/**
+ * Create new role (admin only)
+ * @param {string} roleName - New role name
+ * @param {string} token - Authentication token
+ * @returns {Promise<Object>} Created role data
+ */
 const createRole = async (roleName, token) => {
-  const response = await fetch(`${AUTH_URL}/roles`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({ role: roleName })
-  });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return response.json();
+  try {
+    const response = await fetch(`${AUTH_URL}/roles`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ role: roleName })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to create role');
+    }
+    return data;
+  } catch (error) {
+    console.error('Error creating role:', error);
+    throw error;
+  }
 };
 
+/**
+ * Update role (admin only)
+ * @param {string} oldRole - Current role name
+ * @param {string} newRole - New role name
+ * @param {string} token - Authentication token
+ * @returns {Promise<Object>} Updated role data
+ */
 const updateRole = async (oldRole, newRole, token) => {
-  const response = await fetch(`${AUTH_URL}/roles/${oldRole}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({ newRole })
-  });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return response.json();
+  try {
+    const response = await fetch(`${AUTH_URL}/roles/${oldRole}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ newRole })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to update role');
+    }
+    return data;
+  } catch (error) {
+    console.error('Error updating role:', error);
+    throw error;
+  }
 };
 
 const authApi = {
   registerUser,
   loginUser,
   getUsers,
+  getUserDetails,
   fetchRoles,
   updateUserRole,
   deleteUser,

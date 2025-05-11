@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { fetchWarehouses, fetchWarehouseWithBranches, createWarehouse, updateWarehouse, deleteWarehouse } from '../../api/warehouse';
+import { fetchWarehouses, fetchWarehouseWithBranches, createWarehouse } from '../../api/warehouse';
 import { fetchCompanies } from '../../api/company';
 import authApi from '../../api/auth';
 import useAuth from '../../hooks/useAuth';
 import { ROLES } from '../../constants/roles';
-import { FiEdit2, FiTrash2, FiPlus, FiX, FiCheck, FiAlertCircle, FiMapPin, FiUser, FiHome } from 'react-icons/fi';
 
 const WarehouseManagement = () => {
   const { token } = useAuth();
@@ -13,9 +12,8 @@ const WarehouseManagement = () => {
   const [managers, setManagers] = useState([]);
   const [selected, setSelected] = useState(null);
   const [branches, setBranches] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [editingWarehouse, setEditingWarehouse] = useState(null);
-  const [formData, setFormData] = useState({
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newWarehouse, setNewWarehouse] = useState({
     name: '',
     location: '',
     companyId: '',
@@ -27,7 +25,6 @@ const WarehouseManagement = () => {
 
   const loadData = useCallback(async () => {
     try {
-      setLoading(true);
       const [warehousesData, companiesData, usersData] = await Promise.all([
         fetchWarehouses(token),
         fetchCompanies(token),
@@ -35,12 +32,11 @@ const WarehouseManagement = () => {
       ]);
       setWarehouses(warehousesData);
       setCompanies(companiesData);
-      const managers = usersData.filter(user => user.role === ROLES.WAREHOUSE_MANAGER);
+      const managers = usersData.filter(user => user.role === 'warehouse-manager');
       setManagers(managers);
     } catch (error) {
+      console.error('Error loading data:', error);
       setError('Failed to load data');
-    } finally {
-      setLoading(false);
     }
   }, [token]);
 
@@ -54,263 +50,252 @@ const WarehouseManagement = () => {
       const data = await fetchWarehouseWithBranches(id, token);
       setBranches(data.branches || []);
     } catch (err) {
+      console.error('Error loading branches:', err);
       setBranches([]);
     }
   };
 
-  const handleEdit = (warehouse) => {
-    setEditingWarehouse(warehouse);
-    setFormData({
-      name: warehouse.name,
-      location: warehouse.location,
-      companyId: warehouse.company?._id || '',
-      managerId: warehouse.manager?._id || ''
-    });
-    setShowForm(true);
-  };
-
-  const handleDelete = async (warehouseId) => {
-    if (window.confirm('Are you sure you want to delete this warehouse?')) {
-      try {
-        setError('');
-        await deleteWarehouse(warehouseId, token);
-        setSuccess('Warehouse deleted successfully!');
-        loadData();
-      } catch (err) {
-        setError(err.message || 'Failed to delete warehouse');
-      }
-    }
-  };
-
-  const handleSubmit = async (e) => {
+  const handleAddWarehouse = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setSuccess('');
 
     try {
-      if (editingWarehouse) {
-        await updateWarehouse(editingWarehouse._id, formData, token);
-        setSuccess('Warehouse updated successfully!');
-      } else {
-        await createWarehouse(formData, token);
-        setSuccess('Warehouse created successfully!');
-      }
-      setShowForm(false);
-      setEditingWarehouse(null);
-      setFormData({ name: '', location: '', companyId: '', managerId: '' });
-      loadData();
+      await createWarehouse(newWarehouse, token);
+      setSuccess('Warehouse created successfully!');
+      setNewWarehouse({ name: '', location: '', companyId: '', managerId: '' });
+      setShowAddForm(false);
+      loadData(); // Reload the warehouses list
     } catch (err) {
-      setError(err.message || 'Failed to save warehouse');
+      console.error('Error creating warehouse:', err);
+      setError('Failed to create warehouse. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading && !warehouses.length) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-800">Warehouse Management</h2>
-        <button
-          onClick={() => {
-            setShowForm(!showForm);
-            setEditingWarehouse(null);
-            setFormData({ name: '', location: '', companyId: '', managerId: '' });
-          }}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
-        >
-          {showForm ? (
-            <>
-              <FiX className="mr-2" /> Cancel
-            </>
-          ) : (
-            <>
-              <FiPlus className="mr-2" /> Add Warehouse
-            </>
-          )}
-        </button>
-      </div>
+    <div style={{ padding: '20px' }}>
+      <h2 style={{ marginBottom: '20px' }}>Warehouse Management</h2>
 
       {error && (
-        <div className="flex items-center p-4 mb-6 bg-red-50 border-l-4 border-red-500 text-red-700 rounded">
-          <FiAlertCircle className="mr-2 text-xl" />
-          <p>{error}</p>
+        <div style={{ 
+          padding: '10px', 
+          marginBottom: '20px', 
+          backgroundColor: '#ffebee', 
+          color: '#c62828',
+          borderRadius: '4px'
+        }}>
+          {error}
         </div>
       )}
 
       {success && (
-        <div className="flex items-center p-4 mb-6 bg-green-50 border-l-4 border-green-500 text-green-700 rounded">
-          <FiCheck className="mr-2 text-xl" />
-          <p>{success}</p>
+        <div style={{ 
+          padding: '10px', 
+          marginBottom: '20px', 
+          backgroundColor: '#e8f5e9', 
+          color: '#2e7d32',
+          borderRadius: '4px'
+        }}>
+          {success}
         </div>
       )}
 
-      {showForm && (
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8 transform transition-all duration-300">
-          <h3 className="text-2xl font-semibold mb-6 text-gray-800">
-            {editingWarehouse ? 'Edit Warehouse' : 'Add New Warehouse'}
-          </h3>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Company</label>
-                <select
-                  value={formData.companyId}
-                  onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-                  required
-                >
-                  <option value="">Select a company</option>
-                  {companies.map(company => (
-                    <option key={company._id} value={company._id}>
-                      {company.name}
-                    </option>
-                  ))}
-                </select>
+      <div style={{ display: 'flex', gap: '20px' }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginBottom: '20px'
+          }}>
+            <h3>Warehouses</h3>
+            <button
+              onClick={() => setShowAddForm(!showAddForm)}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#1976d2',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              {showAddForm ? 'Cancel' : 'Add Warehouse'}
+            </button>
+          </div>
+
+          {showAddForm && (
+            <form onSubmit={handleAddWarehouse} style={{
+              backgroundColor: '#fff',
+              padding: '20px',
+              borderRadius: '8px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              marginBottom: '20px'
+            }}>
+              <h4 style={{ marginBottom: '15px' }}>Add New Warehouse</h4>
+              
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px' }}>
+                  Company:
+                  <select
+                    value={newWarehouse.companyId}
+                    onChange={(e) => setNewWarehouse(prev => ({ ...prev, companyId: e.target.value }))}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      borderRadius: '4px',
+                      border: '1px solid #ddd'
+                    }}
+                  >
+                    <option value="">Select a company</option>
+                    {companies.map(company => (
+                      <option key={company._id} value={company._id}>
+                        {company.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Warehouse Manager</label>
-                <select
-                  value={formData.managerId}
-                  onChange={(e) => setFormData({ ...formData, managerId: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-                  required
-                >
-                  <option value="">Select a manager</option>
-                  {managers.map(manager => (
-                    <option key={manager._id} value={manager._id}>
-                      {manager.username} ({manager.email})
-                    </option>
-                  ))}
-                </select>
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px' }}>
+                  Warehouse Manager:
+                  <select
+                    value={newWarehouse.managerId}
+                    onChange={(e) => setNewWarehouse(prev => ({ ...prev, managerId: e.target.value }))}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      borderRadius: '4px',
+                      border: '1px solid #ddd'
+                    }}
+                  >
+                    <option value="">Select a manager</option>
+                    {managers.map(manager => (
+                      <option key={manager._id} value={manager._id}>
+                        {manager.name} ({manager.email})
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Warehouse Name</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-                  required
-                />
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px' }}>
+                  Warehouse Name:
+                  <input
+                    type="text"
+                    value={newWarehouse.name}
+                    onChange={(e) => setNewWarehouse(prev => ({ ...prev, name: e.target.value }))}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      borderRadius: '4px',
+                      border: '1px solid #ddd'
+                    }}
+                  />
+                </label>
               </div>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Location</label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-                  required
-                />
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px' }}>
+                  Location:
+                  <input
+                    type="text"
+                    value={newWarehouse.location}
+                    onChange={(e) => setNewWarehouse(prev => ({ ...prev, location: e.target.value }))}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      borderRadius: '4px',
+                      border: '1px solid #ddd'
+                    }}
+                  />
+                </label>
               </div>
-            </div>
 
-            <div className="flex justify-end space-x-4">
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200"
-              >
-                Cancel
-              </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  backgroundColor: loading ? '#ccc' : '#1976d2',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: loading ? 'not-allowed' : 'pointer'
+                }}
               >
-                {loading ? 'Saving...' : (editingWarehouse ? 'Update Warehouse' : 'Add Warehouse')}
+                {loading ? 'Creating...' : 'Create Warehouse'}
               </button>
-            </div>
-          </form>
-        </div>
-      )}
+            </form>
+          )}
 
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-800">Warehouse List</h3>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">Total Warehouses: {warehouses.length}</span>
-            </div>
+          <div style={{
+            backgroundColor: '#fff',
+            padding: '20px',
+            borderRadius: '8px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          }}>
+            <ul style={{ listStyle: 'none', padding: 0 }}>
+              {warehouses.map(w => (
+                <li key={w._id} style={{ marginBottom: '10px' }}>
+                  <button
+                    onClick={() => handleSelect(w._id)}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      textAlign: 'left',
+                      backgroundColor: selected === w._id ? '#e3f2fd' : 'transparent',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {w.name} ({w.location})
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Warehouse Details</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Manager</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {warehouses.map(warehouse => (
-                <tr key={warehouse._id} className="hover:bg-gray-50 transition-colors duration-200">
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col">
-                      <div className="text-sm font-medium text-gray-900">{warehouse.name}</div>
-                      <div className="text-sm text-gray-500 flex items-center">
-                        <FiMapPin className="mr-1" /> {warehouse.location}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center text-sm text-gray-500">
-                      <FiHome className="mr-1" /> {warehouse.company?.name || 'N/A'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center text-sm text-gray-500">
-                      <FiUser className="mr-1" /> {warehouse.manager?.username || 'N/A'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end space-x-3">
-                      <button
-                        onClick={() => handleEdit(warehouse)}
-                        className="inline-flex items-center px-3 py-1.5 border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 transition-colors duration-200"
-                      >
-                        <FiEdit2 className="w-4 h-4 mr-1" />
-                        <span className="text-sm">Edit</span>
-                      </button>
-                      <button
-                        onClick={() => handleDelete(warehouse._id)}
-                        className="inline-flex items-center px-3 py-1.5 border border-red-600 text-red-600 rounded-md hover:bg-red-50 transition-colors duration-200"
-                      >
-                        <FiTrash2 className="w-4 h-4 mr-1" />
-                        <span className="text-sm">Delete</span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {warehouses.length === 0 && (
-                <tr>
-                  <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
-                    <div className="flex flex-col items-center justify-center">
-                      <FiAlertCircle className="w-12 h-12 text-gray-400 mb-2" />
-                      <p className="text-lg font-medium">No warehouses found</p>
-                      <p className="text-sm">Add a new warehouse to get started</p>
-                    </div>
-                  </td>
-                </tr>
+
+        {selected && (
+          <div style={{ flex: 1 }}>
+            <div style={{
+              backgroundColor: '#fff',
+              padding: '20px',
+              borderRadius: '8px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              <h3 style={{ marginBottom: '15px' }}>Branches</h3>
+              {branches.length > 0 ? (
+                <ul style={{ listStyle: 'none', padding: 0 }}>
+                  {branches.map(b => (
+                    <li key={b._id} style={{
+                      padding: '10px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      marginBottom: '10px'
+                    }}>
+                      {b.name} ({b.location})
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p style={{ color: '#666' }}>No branches found for this warehouse.</p>
               )}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

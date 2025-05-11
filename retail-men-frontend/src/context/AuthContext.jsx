@@ -1,5 +1,6 @@
 // src/context/AuthContext.jsx
 import React, { createContext, useState, useEffect } from 'react';
+import jwtDecode from 'jwt-decode';
 
 const AuthContext = createContext();
 
@@ -9,10 +10,14 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (token) {
-      // Decode JWT payload (assumes payload JSON has a 'role' field)
       try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setUser({ role: payload.role, ...payload });
+        const decoded = jwtDecode(token);
+        console.log('Decoded token in AuthContext:', decoded); // Debug log
+        setUser({
+          id: decoded.id,
+          role: decoded.role,
+          ...decoded
+        });
       } catch (error) {
         console.error('Invalid token', error);
         setUser(null);

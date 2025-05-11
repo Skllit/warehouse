@@ -6,7 +6,6 @@ import Register from './pages/Register';
 import UserManagement from './pages/Admin/UserManagement';
 import RoleManagement from './pages/Admin/RoleManagement';
 import CompanyList from './pages/Company/CompanyList';
-import CompanyManagement from './pages/Admin/CompanyManagement';
 import CompanyOnboarding from './pages/Admin/CompanyOnboarding';
 import WarehouseDashboard from './pages/Warehouse/WarehouseDashboard';
 import BranchDashboard from './pages/Branch/BranchDashboard';
@@ -21,8 +20,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { ROLES } from './constants/roles';
 import Dashboard from './pages/Dashboard';
 import SalesAnalytics from './pages/Sales/SalesAnalytics';
-import ProductManagement from './pages/Admin/ProductManagement';
-import StockManagement from './pages/Admin/StockManagement';
+import CompanyProfile from './pages/Company/CompanyProfile';
+import ProductManagement from './pages/Product/ProductManagement';
 
 function App() {
   const { token, user } = useContext(AuthContext);
@@ -33,7 +32,7 @@ function App() {
       case ROLES.ADMIN:
         return '/user-management';
       case ROLES.COMPANY:
-        return '/company-list';
+        return '/company-profile';
       case ROLES.WAREHOUSE_MANAGER:
         return '/warehouse-dashboard';
       case ROLES.BRANCH_MANAGER:
@@ -85,31 +84,26 @@ function App() {
                   <WarehouseManagement />
                 </ProtectedRoute>
               } />
-              <Route path="/company-management" element={
-                <ProtectedRoute roles={[ROLES.ADMIN]}>
-                  <CompanyManagement />
-                </ProtectedRoute>
-              } />
               <Route path="/company-onboarding" element={
                 <ProtectedRoute roles={[ROLES.ADMIN]}>
                   <CompanyOnboarding />
                 </ProtectedRoute>
               } />
-              <Route path="/product-management" element={
-                <ProtectedRoute roles={[ROLES.ADMIN]}>
-                  <ProductManagement />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/stock-management" element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <StockManagement />
-                </ProtectedRoute>
-              } />
 
               {/* Company Routes */}
+              <Route path="/company-profile" element={
+                <ProtectedRoute roles={[ROLES.COMPANY]}>
+                  <CompanyProfile />
+                </ProtectedRoute>
+              } />
               <Route path="/company-list" element={
                 <ProtectedRoute roles={[ROLES.ADMIN, ROLES.COMPANY]}>
                   <CompanyList />
+                </ProtectedRoute>
+              } />
+              <Route path="/product-management" element={
+                <ProtectedRoute roles={[ROLES.COMPANY]}>
+                  <ProductManagement />
                 </ProtectedRoute>
               } />
 

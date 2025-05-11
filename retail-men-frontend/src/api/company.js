@@ -39,7 +39,7 @@ export const createCompany = async (companyData, token) => {
         contactEmail: companyData.contactEmail.toLowerCase(),
         contactPhone: companyData.contactPhone,
         address: companyData.address,
-        status: companyData.status || 'active',
+        status: 'active',
         registrationNumber: uniqueId,
         code: normalizedName.toLowerCase().replace(/[^a-z0-9]/g, '') + '-' + uniqueId.substr(0, 6)
       })
@@ -67,59 +67,6 @@ export const createCompany = async (companyData, token) => {
       stack: error.stack,
       response: error.response
     });
-    throw error;
-  }
-};
-
-export const updateCompany = async (companyId, companyData, token) => {
-  try {
-    const response = await fetch(`${COMPANY_URL}/${companyId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        name: companyData.name.trim(),
-        location: companyData.location,
-        contactPerson: companyData.contactPerson,
-        contactEmail: companyData.contactEmail.toLowerCase(),
-        contactPhone: companyData.contactPhone,
-        address: companyData.address,
-        status: companyData.status
-      })
-    });
-
-    const responseData = await response.json();
-
-    if (!response.ok) {
-      throw new Error(responseData.message || 'Failed to update company');
-    }
-
-    return responseData;
-  } catch (error) {
-    console.error('Error updating company:', error);
-    throw error;
-  }
-};
-
-export const deleteCompany = async (companyId, token) => {
-  try {
-    const response = await fetch(`${COMPANY_URL}/${companyId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      }
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to delete company');
-    }
-
-    return true;
-  } catch (error) {
-    console.error('Error deleting company:', error);
     throw error;
   }
 };

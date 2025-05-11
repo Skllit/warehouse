@@ -1,10 +1,12 @@
 // src/components/Sidebar.jsx
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ROLES } from '../constants/roles';
 import useAuth from '../hooks/useAuth';
+import { NavLink } from 'react-router-dom';
 
 const Sidebar = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
 
@@ -29,78 +31,180 @@ const Sidebar = () => {
     color: isActive(path) ? '#1a73e8' : '#5f6368',
   });
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
   return (
     <div style={{
       width: '256px',
-      height: '100vh',
-      backgroundColor: '#fff',
-      borderRight: '1px solid #e0e0e0',
-      padding: '20px 0',
+      backgroundColor: '#1a237e',
+      color: 'white',
       position: 'fixed',
-      left: 0,
-      top: 0,
+      height: '100vh',
+      padding: '20px 0',
+      display: 'flex',
+      flexDirection: 'column'
     }}>
       <div style={{ padding: '0 20px', marginBottom: '20px' }}>
-        <h2 style={{ margin: 0, color: '#1a73e8' }}>Retail Men</h2>
+        <h2 style={{ margin: 0 }}>RetailMen</h2>
       </div>
 
-      <nav>
-        <Link to="/dashboard" style={getLinkStyle('/dashboard')}>
-          <span style={getIconStyle('/dashboard')}>📊</span>
-          Dashboard
-        </Link>
-
-        {user?.role === 'admin' && (
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {user?.role === ROLES.ADMIN && (
           <>
-            <Link to="/user-management" style={getLinkStyle('/user-management')}>
-              <span style={getIconStyle('/user-management')}>👥</span>
+            <NavLink to="/user-management" style={({ isActive }) => ({
+              display: 'block',
+              padding: '12px 20px',
+              color: 'white',
+              textDecoration: 'none',
+              backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
+            })}>
               User Management
-            </Link>
-            <Link to="/company-management" style={getLinkStyle('/company-management')}>
-              <span style={getIconStyle('/company-management')}>🏢</span>
-              Company Management
-            </Link>
-            <Link to="/warehouse-management" style={getLinkStyle('/warehouse-management')}>
-              <span style={getIconStyle('/warehouse-management')}>🏭</span>
+            </NavLink>
+            <NavLink to="/role-management" style={({ isActive }) => ({
+              display: 'block',
+              padding: '12px 20px',
+              color: 'white',
+              textDecoration: 'none',
+              backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
+            })}>
+              Role Management
+            </NavLink>
+            <NavLink to="/warehouse-management" style={({ isActive }) => ({
+              display: 'block',
+              padding: '12px 20px',
+              color: 'white',
+              textDecoration: 'none',
+              backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
+            })}>
               Warehouse Management
-            </Link>
-            <Link to="/admin/stock-management" style={getLinkStyle('/admin/stock-management')}>
-              <span style={getIconStyle('/admin/stock-management')}>📦</span>
-              Stock Management
-            </Link>
-            <Link to="/product-management" style={getLinkStyle('/product-management')}>
-              <span style={getIconStyle('/product-management')}>🏷️</span>
+            </NavLink>
+            <NavLink to="/company-onboarding" style={({ isActive }) => ({
+              display: 'block',
+              padding: '12px 20px',
+              color: 'white',
+              textDecoration: 'none',
+              backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
+            })}>
+              Company Onboarding
+            </NavLink>
+          </>
+        )}
+
+        {user?.role === ROLES.COMPANY && (
+          <>
+            <NavLink to="/company-profile" style={({ isActive }) => ({
+              display: 'block',
+              padding: '12px 20px',
+              color: 'white',
+              textDecoration: 'none',
+              backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
+            })}>
+              Company Profile
+            </NavLink>
+            <NavLink to="/product-management" style={({ isActive }) => ({
+              display: 'block',
+              padding: '12px 20px',
+              color: 'white',
+              textDecoration: 'none',
+              backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
+            })}>
               Product Management
-            </Link>
+            </NavLink>
+            <NavLink to="/company-list" style={({ isActive }) => ({
+              display: 'block',
+              padding: '12px 20px',
+              color: 'white',
+              textDecoration: 'none',
+              backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
+            })}>
+              Company List
+            </NavLink>
           </>
         )}
 
-        {(user?.role === 'warehouse-manager' || user?.role === 'branch-manager') && (
-          <>
-            <Link to="/products" style={getLinkStyle('/products')}>
-              <span style={getIconStyle('/products')}>👕</span>
-              Products
-            </Link>
-            <Link to="/stock" style={getLinkStyle('/stock')}>
-              <span style={getIconStyle('/stock')}>📦</span>
-              Stock
-            </Link>
-          </>
+        {user?.role === ROLES.WAREHOUSE_MANAGER && (
+          <NavLink to="/warehouse-dashboard" style={({ isActive }) => ({
+            display: 'block',
+            padding: '12px 20px',
+            color: 'white',
+            textDecoration: 'none',
+            backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
+          })}>
+            Warehouse Dashboard
+          </NavLink>
         )}
 
-        {user?.role === 'sales' && (
-          <>
-            <Link to="/orders" style={getLinkStyle('/orders')}>
-              <span style={getIconStyle('/orders')}>🛒</span>
-              Orders
-            </Link>
-            <Link to="/sales-analytics" style={getLinkStyle('/sales-analytics')}>
-              <span style={getIconStyle('/sales-analytics')}>📈</span>
-              Sales Analytics
-            </Link>
-          </>
+        {user?.role === ROLES.BRANCH_MANAGER && (
+          <NavLink to="/branch-dashboard" style={({ isActive }) => ({
+            display: 'block',
+            padding: '12px 20px',
+            color: 'white',
+            textDecoration: 'none',
+            backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
+          })}>
+            Branch Dashboard
+          </NavLink>
         )}
-      </nav>
+
+        {/* Common Links */}
+        <NavLink to="/dashboard" style={({ isActive }) => ({
+          display: 'block',
+          padding: '12px 20px',
+          color: 'white',
+          textDecoration: 'none',
+          backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
+        })}>
+          Dashboard
+        </NavLink>
+        <NavLink to="/product-list" style={({ isActive }) => ({
+          display: 'block',
+          padding: '12px 20px',
+          color: 'white',
+          textDecoration: 'none',
+          backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
+        })}>
+          Products
+        </NavLink>
+        <NavLink to="/stock-overview" style={({ isActive }) => ({
+          display: 'block',
+          padding: '12px 20px',
+          color: 'white',
+          textDecoration: 'none',
+          backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
+        })}>
+          Stock Overview
+        </NavLink>
+        <NavLink to="/order-list" style={({ isActive }) => ({
+          display: 'block',
+          padding: '12px 20px',
+          color: 'white',
+          textDecoration: 'none',
+          backgroundColor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
+        })}>
+          Orders
+        </NavLink>
+      </div>
+
+      <div style={{ padding: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+        <button
+          onClick={handleLogout}
+          style={{
+            width: '100%',
+            padding: '10px',
+            backgroundColor: 'transparent',
+            border: '1px solid white',
+            color: 'white',
+            cursor: 'pointer',
+            borderRadius: '4px'
+          }}
+        >
+          Logout
+        </button>
+      </div>
     </div>
   );
 };
