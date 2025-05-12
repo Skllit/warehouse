@@ -64,7 +64,7 @@ const ProductList = () => {
                   </span>
                 </td>
               </tr>
-            ))}
+          ))}
           </tbody>
         </table>
       </div>

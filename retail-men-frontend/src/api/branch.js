@@ -9,8 +9,8 @@ const BRANCH_URL = 'http://localhost:5004/api';
 const fetchBranches = async (token) => {
   try {
     const response = await fetch(`${BRANCH_URL}/branches`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.message || 'Failed to fetch branches');
@@ -102,8 +102,8 @@ const createBranch = async (branchData, token) => {
 const fetchBranchStock = async (branchId, token) => {
   try {
     const response = await fetch(`${BRANCH_URL}/branches/${branchId}/stock`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.message || 'Failed to fetch branch stock');

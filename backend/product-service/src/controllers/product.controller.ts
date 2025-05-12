@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import ProductService from '../services/product.service';
-import Product from '../models/product.model';
+import Product from '../models/product.model'; 
 
 export class ProductController {
   static async createProduct(
@@ -37,9 +37,9 @@ export class ProductController {
     try {
       const product = await ProductService.getProductById(req.params.id);
       if (!product) {
-        res.status(404).json({ message: 'Product not found' });
-        return;
-      }
+           res.status(404).json({ message: 'Product not found' });
+           return;
+         }
       res.status(200).json(product);
     } catch (error: any) {
       next(error);

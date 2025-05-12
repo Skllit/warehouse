@@ -21,8 +21,8 @@ class ProductService {
 
     try {
       const product = new Product(formattedData);
-      await product.save();
-      return product;
+    await product.save();
+    return product;
     } catch (error: any) {
       console.error('Error creating product:', error);
       if (error.name === 'ValidationError') {

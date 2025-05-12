@@ -184,14 +184,14 @@ const deleteUser = async (userId, token) => {
  */
 const createRole = async (roleName, token) => {
   try {
-    const response = await fetch(`${AUTH_URL}/roles`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ role: roleName })
-    });
+  const response = await fetch(`${AUTH_URL}/roles`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ role: roleName })
+  });
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.message || 'Failed to create role');
@@ -212,14 +212,14 @@ const createRole = async (roleName, token) => {
  */
 const updateRole = async (oldRole, newRole, token) => {
   try {
-    const response = await fetch(`${AUTH_URL}/roles/${oldRole}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ newRole })
-    });
+  const response = await fetch(`${AUTH_URL}/roles/${oldRole}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ newRole })
+  });
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.message || 'Failed to update role');

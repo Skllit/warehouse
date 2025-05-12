@@ -152,7 +152,7 @@ const BranchDashboard = () => {
         gap: '20px'
       }}>
         {/* Branch List */}
-        <div style={{
+        <div style={{ 
           backgroundColor: '#fff',
           borderRadius: '8px',
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
@@ -191,10 +191,10 @@ const BranchDashboard = () => {
 
         {/* Branch Details */}
         {selectedBranch && (
-          <div style={{
-            backgroundColor: '#fff',
-            borderRadius: '8px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        <div style={{ 
+              backgroundColor: '#fff',
+              borderRadius: '8px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
             padding: '20px'
           }}>
             <div style={{ marginBottom: '20px' }}>
@@ -336,12 +336,12 @@ const BranchDashboard = () => {
                   border: '1px solid #ddd'
                 }}
               />
-            </div>
-            <div style={{ 
-              display: 'flex',
+              </div>
+              <div style={{
+                display: 'flex',
               justifyContent: 'flex-end',
               gap: '10px'
-            }}>
+              }}>
               <button
                 onClick={() => {
                   setShowStockModal(false);
@@ -394,7 +394,7 @@ const BranchDashboard = () => {
             padding: '20px',
             borderRadius: '8px',
             width: '400px'
-          }}>
+                }}>
             <h3 style={{ margin: '0 0 20px 0' }}>Request Restock</h3>
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', marginBottom: '5px' }}>Product</label>
@@ -424,7 +424,7 @@ const BranchDashboard = () => {
                   border: '1px solid #ddd'
                 }}
               />
-            </div>
+              </div>
             <div style={{ 
               display: 'flex',
               justifyContent: 'flex-end',
